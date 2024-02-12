@@ -15,7 +15,7 @@ app = FastAPI()
 
 imagePath = "./uploads"
 
-@app.get("/AICOSS/image/prediction")
+@app.post("/AICOSS/image/prediction")
 async def handleUploadedImage(file: UploadFile = File(...)):
     if file:
         image = Image.open(BytesIO(await file.read()))
@@ -25,7 +25,7 @@ async def handleUploadedImage(file: UploadFile = File(...)):
         savePath = imagePath + f"/{str(numImage)}.jpg"
         image.save(savePath, "JPEG")
 
-        modelPrediction = getModelPrediction(savePath)
+        modelPrediction = getModelPrediction(image)
         labelList = getLabelList()
 
         jsonData = makeJsonObject(keyList = labelList, valueList = modelPrediction)
@@ -52,14 +52,14 @@ def getLabelList() -> list: #returns list of labels
 
     return labelList
 
-def getModelPrediction(iamgePath) -> list:
+def getModelPrediction(image) -> list:
     transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Resize((224, 224)),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    image = Image.open(imagePath)
+    # image = Image.open(imagePath)
     image = transform(image).reshape(-1, 3, 224, 224)
 
     output = model(image)
