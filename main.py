@@ -1,26 +1,82 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
+import uvicorn
 import torchvision.transforms as transforms
 from PIL import Image
 from io import BytesIO
+import os
+import torch
+import csv
+import json
 
 from aiModel import model
 
 app = FastAPI()
+
+imagePath = "./uploads"
 
 @app.get("/AICOSS/image/prediction")
 async def handleUploadedImage(file: UploadFile = File(...)):
     if file:
         image = Image.open(BytesIO(await file.read()))
 
-        savePath = f"uploads/{file.filename.replace(' ', '_').lower()}.jpg"
+        numImage = getNumberOfImages(imagePath) #integer
+
+        savePath = imagePath + f"/{str(numImage)}.jpg"
         image.save(savePath, "JPEG")
 
-        transform = transforms.Compose([
+        modelPrediction = getModelPrediction(savePath)
+        labelList = getLabelList()
+
+        jsonData = makeJsonObject(keyList = labelList, valueList = modelPrediction)
+
+        return JSONResponse(content=jsonData)
+
+
+        
+
+def getNumberOfImages(directoryPath):
+    files = os.listdir(directoryPath)
+
+    files = [file for file in files if os.path.isfile(os.path.join(directoryPath, file))]
+
+    return len(files)
+
+def getLabelList() -> list: #returns list of labels
+    csvFilePath = "sample_submission.csv"
+
+    with open(csvFilePath ,"r", newline="") as csvFile:
+        csvReader = csv.reader(csvFile)
+
+        labelList = next(csvReader)[1:] #Remove First because of Index
+
+    return labelList
+
+def getModelPrediction(iamgePath) -> list:
+    transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Resize((224, 224)),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+    ])
 
-        image = transform(image)
-        
+    image = Image.open(imagePath)
+    image = transform(image).reshape(-1, 3, 224, 224)
 
+    output = model(image)
+    roundedOuput = torch.round(output) #if probability is larger than 0.5, assumes present in image.
+    modelPrediction = roundedOuput.tolist()
+
+    return modelPrediction
+
+def makeJsonObject(keyList : list, valueList : list):
+    data = dict(zip(keyList, valueList))
+
+    jsonData = json.dumps(data, indent = 2)
+
+    return jsonData
+
+
+if __name__ == "__main__":
+    portNumber = 8081
+
+    uvicorn.run("main:app", host="0.0.0.0", port= portNumber, reload=True)

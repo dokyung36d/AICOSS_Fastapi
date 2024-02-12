@@ -1,6 +1,7 @@
 from timm.models import create_model
 import torch
 import torch.nn as nn
+import torchvision.transforms as transforms
 
 model = create_model(
     'DaViT_base',
@@ -13,4 +14,3 @@ model = model.to("cpu")
 checkpoint_path = '2023_AICOSS_model_weight_EggTheProtein.pth'
 checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
 model.load_state_dict(checkpoint)
-
