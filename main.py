@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 import uvicorn
 import torchvision.transforms as transforms
+import torch.nn.functional as F
 from PIL import Image
 from io import BytesIO
 import os
@@ -62,8 +63,8 @@ def getModelPrediction(image) -> list:
     # image = Image.open(imagePath)
     image = transform(image).reshape(-1, 3, 224, 224)
 
-    output = model(image)
-    roundedOuput = torch.round(output) #if probability is larger than 0.5, assumes present in image.
+    output = F.sigmoid(model(image))
+    roundedOuput = torch.round(output).to(dtype=torch.int) #if probability is larger than 0.5, assumes present in image.
     modelPrediction = roundedOuput.tolist()
 
     return modelPrediction
