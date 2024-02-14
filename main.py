@@ -28,8 +28,9 @@ async def handleUploadedImage(file: UploadFile = File(...)):
 
         modelPrediction = getModelPrediction(image)
         labelList = getLabelList()
-
+        
         jsonData = makeJsonObject(keyList = labelList, valueList = modelPrediction)
+        print(jsonData)
 
         return JSONResponse(content=jsonData)
 
@@ -59,20 +60,20 @@ def getModelPrediction(image) -> list:
             transforms.Resize((224, 224)),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-
     # image = Image.open(imagePath)
     image = transform(image).reshape(-1, 3, 224, 224)
 
     output = F.sigmoid(model(image))
-    roundedOuput = torch.round(output).to(dtype=torch.int) #if probability is larger than 0.5, assumes present in image.
+    roundedOuput = torch.round(output).squeeze(dim=0).to(dtype=torch.int) #if probability is larger than 0.5, assumes present in image.
     modelPrediction = roundedOuput.tolist()
+    modelPrediction = [str(element) for element in modelPrediction] #Change to Str type
 
     return modelPrediction
 
 def makeJsonObject(keyList : list, valueList : list):
     data = dict(zip(keyList, valueList))
 
-    jsonData = json.dumps(data, indent = 2)
+    jsonData = json.dumps(data)
 
     return jsonData
 
