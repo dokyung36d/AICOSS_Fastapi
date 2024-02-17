@@ -78,7 +78,7 @@ def makeJsonObject(keyList : list, valueList : list):
     return jsonData
 
 
-if __name__ == "__main__":
-    portNumber = 8081
+# if __name__ == "__main__":
+#     portNumber = 8081
 
-    uvicorn.run("main:app", host="0.0.0.0", port= portNumber, reload=True)
+#     uvicorn.run("main:app", host="0.0.0.0", port= portNumber, reload=True)
