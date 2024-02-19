@@ -33,10 +33,6 @@ async def handleUploadedImage(file: UploadFile = File(...)):
         print(jsonData)
 
         return JSONResponse(content=jsonData)
-    
-@app.get("/")
-def root():
-    return {"hello root"}
 
 
         
