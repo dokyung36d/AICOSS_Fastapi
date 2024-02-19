@@ -3,3 +3,4 @@ fastapi
 torch
 torchvision
 Pillow
+python-multipart
