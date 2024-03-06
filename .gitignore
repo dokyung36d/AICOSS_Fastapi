@@ -2,3 +2,4 @@
 practice.py
 *.jpg
 *.ppk
+__pycache__/
