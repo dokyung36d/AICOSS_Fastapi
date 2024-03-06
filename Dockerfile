@@ -6,7 +6,9 @@ COPY . /code
  
 RUN pip install -r /code/requirements.txt
 
-CMD uvicorn --host=0.0.0.0 --port 8081 main:app
+
+CMD uvicorn --host=0.0.0.0 --port 8000 app.main:app
+
  
 COPY ./app /code/app
  
