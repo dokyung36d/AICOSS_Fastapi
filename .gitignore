@@ -1,5 +1,6 @@
 *.pth
 practice.py
+key.py
 *.jpg
 *.ppk
 __pycache__/
