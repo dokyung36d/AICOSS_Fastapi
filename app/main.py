@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Body
+from fastapi import FastAPI, File, UploadFile, HTTPException, Body, Request
 import requests
 from fastapi.responses import JSONResponse
 import uvicorn
@@ -10,6 +10,7 @@ import os
 import torch
 import csv
 import json
+import redis
 
 from aiModel import model
 
@@ -34,6 +35,24 @@ async def handleUploadedImage(file: UploadFile = File(...)):
         print(jsonData)
 
         return JSONResponse(content=jsonData)
+    
+r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+
+@app.middleware("http")
+async def session_checker(request: Request, call_next):
+    jsessionid = request.cookies.get("JSESSIONID")
+    if not jsessionid:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized: No session"})
+
+    redis_key = f"spring:session:sessions:{jsessionid}"
+    session_data = r.hgetall(redis_key)
+
+    if not session_data:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized: Invalid session"})
+
+    # 세션이 유효하면 다음 요청 처리
+    response = await call_next(request)
+    return response
     
 @app.post("/AICOSS/image/prediction/URL")
 async def handleImageURL(image_url: str = Body(..., embed=True)):
