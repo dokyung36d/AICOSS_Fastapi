@@ -11,7 +11,7 @@ import torch
 import csv
 import json
 import redis
-from key import SECRET_KEY, ACCESS_KEY, REGION
+from key import SECRET_KEY, ACCESS_KEY, REGION, REDIS_HOST, REDIS_PASSWORD
 import boto3
 from aiModel import model
 
@@ -44,7 +44,7 @@ async def handleUploadedImage(file: UploadFile = File(...)):
 
         return JSONResponse(content=jsonData)
     
-r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+r = redis.Redis(host=REDIS_HOST, port=6379, db=0, password=REDIS_PASSWORD)
 
 @app.middleware("http")
 async def session_checker(request: Request, call_next):
