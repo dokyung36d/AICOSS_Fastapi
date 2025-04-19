@@ -1,4 +1,5 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Body
+import requests
 from fastapi.responses import JSONResponse
 import uvicorn
 import torchvision.transforms as transforms
@@ -33,7 +34,19 @@ async def handleUploadedImage(file: UploadFile = File(...)):
         print(jsonData)
 
         return JSONResponse(content=jsonData)
+    
+@app.post("/AICOSS/image/prediction/URL")
+async def handleImageURL(image_url: str = Body(..., embed=True)):
+    response = requests.get(image_url)
+    image = Image.open(BytesIO(response.content)).convert("RGB")
+    
+    modelPrediction = getModelPrediction(image)
+    labelList = getLabelList()
+    
+    jsonData = makeJsonObject(keyList = labelList, valueList = modelPrediction)
 
+
+    return JSONResponse(content=jsonData)
 
         
 
