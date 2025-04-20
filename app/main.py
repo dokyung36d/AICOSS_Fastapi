@@ -54,10 +54,10 @@ async def session_checker(request: Request, call_next):
 
     redis_key = f"spring:session:sessions:{jsessionid}"
     session_data = r.hgetall(redis_key)
-    session_data = json.loads(session_data)
-
+    
     if not session_data:
         return JSONResponse(status_code=401, content={"error": "Unauthorized: Invalid session"})
+    session_data = json.loads(session_data)
 
     login_id = session_data.get("sessionAttr", {}).get("loginId")
     if not login_id:
