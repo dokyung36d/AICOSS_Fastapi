@@ -11,7 +11,7 @@ import torch
 import csv
 import json
 import redis
-from key import SECRET_KEY, ACCESS_KEY, REGION, REDIS_HOST, REDIS_PASSWORD
+from key import REDIS_HOST, REDIS_PASSWORD
 import boto3
 from aiModel import model
 
@@ -19,12 +19,6 @@ app = FastAPI()
 
 imagePath = "./uploads"
 
-s3_client = boto3.client(
-    "s3",
-    region_name=REGION,
-    aws_access_key_id=ACCESS_KEY,
-    aws_secret_access_key=SECRET_KEY,
-)
 
 @app.post("/AICOSS/image/prediction")
 async def handleUploadedImage(file: UploadFile = File(...)):
@@ -70,10 +64,10 @@ async def session_checker(request: Request, call_next):
 @app.post("/AICOSS/image/prediction/URL")
 async def handleImageURL(image_url: str = Body(..., embed=True)):
     try:
-        bucket, key = parse_s3_url(image_url)
+        response = requests.get(image_url)
+        response.raise_for_status()
 
-        s3_object = s3_client.get_object(Bucket=bucket, Key=key)
-        image_bytes = s3_object["Body"].read()
+        image_bytes = response.content
         image = Image.open(BytesIO(image_bytes)).convert("RGB")
 
         modelPrediction = getModelPrediction(image)
@@ -84,15 +78,15 @@ async def handleImageURL(image_url: str = Body(..., embed=True)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
         
-def parse_s3_url(s3_url: str):
-    # s3://bucket-name/key/to/file.jpg → (bucket-name, key/to/file.jpg)
-    if s3_url.startswith("s3://"):
-        s3_url = s3_url.replace("s3://", "")
-        parts = s3_url.split("/", 1)
-        bucket = parts[0]
-        key = parts[1]
-        return bucket, key
-    raise ValueError("URL 형식이 s3://로 시작해야 합니다")
+# def parse_s3_url(s3_url: str):
+#     # s3://bucket-name/key/to/file.jpg → (bucket-name, key/to/file.jpg)
+#     if s3_url.startswith("s3://"):
+#         s3_url = s3_url.replace("s3://", "")
+#         parts = s3_url.split("/", 1)
+#         bucket = parts[0]
+#         key = parts[1]
+#         return bucket, key
+#     raise ValueError("URL 형식이 s3://로 시작해야 합니다")
 
 
 def getNumberOfImages(directoryPath):
