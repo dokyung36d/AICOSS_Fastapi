@@ -44,7 +44,7 @@ r = redis.Redis(host=REDIS_HOST, port=6379, db=0, password=REDIS_PASSWORD)
 @app.post("/AICOSS/image/prediction/URL")
 async def handleImageURL(image_url: str = Body(..., embed=True)):
     try:
-        image_bytes = download_file_from_s3(image_url)
+        image_bytes = await download_file_from_s3(image_url)
         image = Image.open(BytesIO(image_bytes)).convert("RGB")
 
         modelPrediction = getModelPrediction(image)
