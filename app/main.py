@@ -15,6 +15,7 @@ from key import REDIS_HOST, REDIS_PASSWORD
 import boto3
 from aiModel import model
 from tools import download_file_from_s3
+from fastapi.concurrency import run_in_threadpool
 
 app = FastAPI()
 
@@ -31,7 +32,7 @@ async def handleUploadedImage(file: UploadFile = File(...)):
         savePath = imagePath + f"/{str(numImage)}.jpg"
         image.save(savePath, "JPEG")
 
-        modelPrediction = getModelPrediction(image)
+        modelPrediction = await run_in_threadpool(getModelPrediction, image)
         labelList = getLabelList()
         
         jsonData = makeJsonObject(keyList = labelList, valueList = modelPrediction)
@@ -47,7 +48,7 @@ async def handleImageURL(image_url: str = Body(..., embed=True)):
         image_bytes = await download_file_from_s3(image_url)
         image = Image.open(BytesIO(image_bytes)).convert("RGB")
 
-        modelPrediction = getModelPrediction(image)
+        modelPrediction = await run_in_threadpool(getModelPrediction, image)
         labelList = getLabelList()
         jsonData = makeJsonObject(keyList=labelList, valueList=modelPrediction)
 
