@@ -17,6 +17,7 @@ from aiModel import model
 from tools import download_file_from_s3
 from fastapi.concurrency import run_in_threadpool
 from config import UPLOAD_DIR
+import uuid
 
 app = FastAPI()
 
@@ -27,9 +28,7 @@ async def handleUploadedImage(file: UploadFile = File(...)):
     if file:
         image = Image.open(BytesIO(await file.read()))
 
-        numImage = getNumberOfImages(UPLOAD_DIR) #integer
-
-        savePath = UPLOAD_DIR + f"/{str(numImage)}.jpg"
+        savePath = os.path.join(UPLOAD_DIR, f"{uuid.uuid4().hex}.jpg")
         image.save(savePath, "JPEG")
 
         modelPrediction = await run_in_threadpool(getModelPrediction, image)
@@ -66,13 +65,6 @@ async def handleImageURL(image_url: str = Body(..., embed=True)):
 #         return bucket, key
 #     raise ValueError("URL 형식이 s3://로 시작해야 합니다")
 
-
-def getNumberOfImages(directoryPath):
-    files = os.listdir(directoryPath)
-
-    files = [file for file in files if os.path.isfile(os.path.join(directoryPath, file))]
-
-    return len(files)
 
 def getLabelList() -> list: #returns list of labels
     csvFilePath = "sample_submission.csv"
