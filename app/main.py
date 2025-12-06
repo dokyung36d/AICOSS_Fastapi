@@ -16,7 +16,7 @@ import boto3
 from aiModel import model
 from tools import download_file_from_s3
 from fastapi.concurrency import run_in_threadpool
-from config import UPLOAD_DIR
+from config import UPLOAD_DIR, LABEL_CSV_PATH
 import uuid
 
 app = FastAPI()
@@ -66,15 +66,9 @@ async def handleImageURL(image_url: str = Body(..., embed=True)):
 #     raise ValueError("URL 형식이 s3://로 시작해야 합니다")
 
 
-def getLabelList() -> list: #returns list of labels
-    csvFilePath = "sample_submission.csv"
-
-    with open(csvFilePath ,"r", newline="") as csvFile:
-        csvReader = csv.reader(csvFile)
-
-        labelList = next(csvReader)[1:] #Remove First because of Index
-
-    return labelList
+def getLabelList() -> list:
+    with open(LABEL_CSV_PATH, "r", newline="") as csvFile:
+        return next(csv.reader(csvFile))[1:]
 
 def getModelPrediction(image) -> list:
     transform = transforms.Compose([
