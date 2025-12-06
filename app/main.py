@@ -16,10 +16,10 @@ import boto3
 from aiModel import model
 from tools import download_file_from_s3
 from fastapi.concurrency import run_in_threadpool
+from config import UPLOAD_DIR
 
 app = FastAPI()
 
-imagePath = "./uploads"
 
 
 @app.post("/AICOSS/image/prediction")
@@ -27,9 +27,9 @@ async def handleUploadedImage(file: UploadFile = File(...)):
     if file:
         image = Image.open(BytesIO(await file.read()))
 
-        numImage = getNumberOfImages(imagePath) #integer
+        numImage = getNumberOfImages(UPLOAD_DIR) #integer
 
-        savePath = imagePath + f"/{str(numImage)}.jpg"
+        savePath = UPLOAD_DIR + f"/{str(numImage)}.jpg"
         image.save(savePath, "JPEG")
 
         modelPrediction = await run_in_threadpool(getModelPrediction, image)
