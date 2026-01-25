@@ -21,10 +21,13 @@ import uuid
 
 app = FastAPI()
 
-
+r = redis.Redis(host=REDIS_HOST, port=6379, db=0, password=REDIS_PASSWORD)
 
 @app.post("/AICOSS/image/prediction")
-async def handleUploadedImage(file: UploadFile = File(...)):
+async def handleUploadedImage(
+    id: str = Body(...),  # 사용자로부터 고유 ID를 받음
+    file: UploadFile = File(...)
+):
     if file:
         image = Image.open(BytesIO(await file.read()))
 
@@ -34,24 +37,36 @@ async def handleUploadedImage(file: UploadFile = File(...)):
         modelPrediction = await run_in_threadpool(getModelPrediction, image)
         labelList = getLabelList()
         
-        jsonData = makeJsonObject(keyList = labelList, valueList = modelPrediction)
-        print(jsonData)
+    prediction_dict = dict(zip(labelList, modelPrediction))
+    r.set(id, json.dumps(prediction_dict), ex=3600) # 1시간 뒤 자동 삭제
 
-        return JSONResponse(content=jsonData)
+    return JSONResponse(content={
+        "status": "success",
+        "message": "Prediction stored in Redis",
+        "id": id
+    })
     
-r = redis.Redis(host=REDIS_HOST, port=6379, db=0, password=REDIS_PASSWORD)
 
 @app.post("/AICOSS/image/prediction/URL")
-async def handleImageURL(image_url: str = Body(..., embed=True)):
+async def handleImageURL(
+    id: str = Body(...), # JSON Body에서 id 추출
+    image_url: str = Body(...)
+):
     try:
         image_bytes = await download_file_from_s3(image_url)
         image = Image.open(BytesIO(image_bytes)).convert("RGB")
 
         modelPrediction = await run_in_threadpool(getModelPrediction, image)
         labelList = getLabelList()
-        jsonData = makeJsonObject(keyList=labelList, valueList=modelPrediction)
+        
+        prediction_dict = dict(zip(labelList, modelPrediction))
+        r.set(id, json.dumps(prediction_dict), ex=3600)
 
-        return JSONResponse(content=jsonData)
+        return JSONResponse(content={
+                    "status": "success",
+                    "message": "Prediction stored in Redis",
+                    "id": id
+                })
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
         
